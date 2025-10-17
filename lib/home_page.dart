@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import 'package:http/http.dart' as http;
-import 'dart:async';
 
 class HomePage extends StatefulWidget {
   @override
@@ -22,7 +21,8 @@ class _HomePageState extends State<HomePage> {
   final picker = ImagePicker();
 
   // ✅ Your Render backend URL
-  final String baseUrl = "https://afiyahmed-server.onrender.com";
+ final String baseUrl = "https://afiyahmed-server.onrender.com";
+
 
   Future<void> _pickImage() async {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -108,17 +108,17 @@ class _HomePageState extends State<HomePage> {
         _loading = false;
         _result = {"error": "🚫 No internet connection."};
       });
-    } on TimeoutException catch (e) {
-  setState(() {
-    _loading = false;
-    _result = {"error": "❌ Request timed out: $e"};
-  });
-} catch (e) {
-  setState(() {
-    _loading = false;
-    _result = {"error": "❌ Error: $e"};
-  });
-}
+    } on TimeoutException {
+      setState(() {
+        _loading = false;
+        _result = {"error": "⏳ Server took too long to respond."};
+      });
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _result = {"error": "❌ Error: $e"};
+      });
+    }
   }
 
   Widget _gradientButton(String text, VoidCallback onPressed) {

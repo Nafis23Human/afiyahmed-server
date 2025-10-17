@@ -1,16 +1,34 @@
-from fastapi import FastAPI, UploadFile, File
-from fastapi.middleware.cors import CORSMiddleware
-import google.generativeai as genai
+# server.py
 import os
-from dotenv import load_dotenv
+import base64
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-# Load .env file for local use (Render ignores it)
-load_dotenv()
+# Optional: Gemini AI
+try:
+    import google.generativeai as genai
+    USE_GEMINI = True
+except ImportError:
+    USE_GEMINI = False
 
-# Create FastAPI app
-app = FastAPI()
+# -------------------------
+# Get Gemini API key safely
+# -------------------------
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if USE_GEMINI and not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY is not set in environment variables!")
 
-# Allow all origins (you can restrict later if needed)
+if USE_GEMINI:
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel("gemini-2.5-flash")
+
+# -------------------------
+# Initialize FastAPI
+# -------------------------
+app = FastAPI(title="AfiyahMed AI Skin Diagnosis")
+
+# Enable CORS for Flutter Web/Desktop/Mobile
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,60 +37,52 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Load Gemini API Key ---
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# -------------------------
+# Request model
+# -------------------------
+class PredictRequest(BaseModel):
+    symptoms: str
+    image_base64: str
 
-if not GEMINI_API_KEY:
-    print("⚠️ GEMINI_API_KEY missing! Environment keys available:")
-    for key in os.environ.keys():
-        print("   ", key)
-    raise ValueError("❌ GEMINI_API_KEY is not set in environment variables!")
-else:
-    print("✅ GEMINI_API_KEY found successfully!")
-
-# Configure Gemini client
-genai.configure(api_key=GEMINI_API_KEY)
-
-
-# --- Routes ---
-@app.get("/")
-def home():
-    return {"message": "✅ AfiyahMed Server is running successfully!"}
-
-
-@app.post("/analyze_image/")
-async def analyze_image(file: UploadFile = File(...)):
+# -------------------------
+# Predict endpoint
+# -------------------------
+@app.post("/predict_json")
+async def predict_json(request: PredictRequest):
     try:
-        contents = await file.read()
+        # Decode image
+        image_bytes = base64.b64decode(request.image_base64)
 
-        # Upload image to Gemini
-        image = genai.upload_file(file.name, contents)
+        prompt = f"""
+        You are a medical AI assistant.
+        Analyze the patient's image and the symptoms: {request.symptoms}.
+        Provide possible diseases, explanations, urgency, and next steps.
+        """
 
-        # Use Gemini model
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        response = model.generate_content(
-            ["Analyze this medical image and describe what you observe.", image]
-        )
-
-        return {"analysis": response.text}
+        if USE_GEMINI:
+            response = model.generate_content([
+                prompt,
+                {"mime_type": "image/jpeg", "data": image_bytes}
+            ])
+            return {"prediction": response.text}
+        else:
+            # Dummy response for local testing
+            return {
+                "prediction": {
+                    "top_diseases": [
+                        {"name": "Eczema", "confidence": "75%"},
+                        {"name": "Psoriasis", "confidence": "20%"}
+                    ],
+                    "explanation": "Based on the image and symptoms, the AI suspects common skin conditions.",
+                    "urgency": "Moderate",
+                    "recommended_next_steps": [
+                        "Consult a dermatologist",
+                        "Apply moisturizer",
+                        "Avoid scratching affected area"
+                    ],
+                    "disclaimer": "This is an AI-based suggestion, not a medical diagnosis."
+                }
+            }
 
     except Exception as e:
-        print("❌ Error analyzing image:", e)
-        return {"error": str(e)}
-
-
-@app.post("/chat/")
-async def chat(prompt: str):
-    try:
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        response = model.generate_content(prompt)
-        return {"response": response.text}
-    except Exception as e:
-        print("❌ Chat error:", e)
-        return {"error": str(e)}
-
-
-# Run locally (ignored on Render)
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=10000)
+        raise HTTPException(status_code=500, detail=str(e))

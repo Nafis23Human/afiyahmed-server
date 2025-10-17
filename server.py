@@ -49,7 +49,7 @@ async def analyze_image(file: UploadFile = File(...)):
         image = genai.upload_file(file.name, contents)
 
         # Use Gemini model
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(
             ["Analyze this medical image and describe what you observe.", image]
         )
@@ -64,7 +64,7 @@ async def analyze_image(file: UploadFile = File(...)):
 @app.post("/chat/")
 async def chat(prompt: str):
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(prompt)
         return {"response": response.text}
     except Exception as e:

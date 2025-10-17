@@ -23,64 +23,27 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          // Gradient background
-          gradient: LinearGradient(
-            colors: [Colors.green.shade700, Colors.green.shade400],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Logo/Image
-              Container(
-                width: 1500,
-                height: 200,
-                decoration: BoxDecoration(
-                
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 8,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/Afiyah2.jpg'),
-                    fit: BoxFit.cover,
-                  ),
-                ),
+      backgroundColor: Colors.green.shade600,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.healing, size: 80, color: Colors.white),
+            SizedBox(height: 20),
+            Text(
+              "🌿 AfiyahMed",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
               ),
-              SizedBox(height: 24),
-              // App Name
-              Text(
-                " AfiyahMed",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black26,
-                      offset: Offset(1, 1),
-                      blurRadius: 3,
-                    )
-                  ],
-                ),
-              ),
-              SizedBox(height: 16),
-              // Loading indicator
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                strokeWidth: 3,
-              ),
-            ],
-          ),
+            ),
+            SizedBox(height: 10),
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ],
         ),
       ),
     );

@@ -9,13 +9,15 @@ import os
 from dotenv import load_dotenv
 
 # -------------------------------------------------
-# ✅ Load environment variables
+# Load environment variables
 # -------------------------------------------------
 load_dotenv()
 
 app = FastAPI(title="AfiyahMed API", version="1.0")
 
-# ✅ CORS (for Flutter mobile/web)
+# -------------------------------------------------
+# CORS (for Flutter mobile/web)
+# -------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # You can restrict later if needed
@@ -25,7 +27,7 @@ app.add_middleware(
 )
 
 # -------------------------------------------------
-# ✅ Load Gemini API key
+# Load Gemini API key
 # -------------------------------------------------
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
@@ -36,7 +38,7 @@ else:
 genai.configure(api_key=GEMINI_API_KEY)
 
 # -------------------------------------------------
-# ✅ Root route (for quick health check)
+# Root route (health check)
 # -------------------------------------------------
 @app.get("/")
 def home():
@@ -44,7 +46,7 @@ def home():
 
 
 # -------------------------------------------------
-# ✅ Flutter app calls this endpoint
+# Flutter app calls this endpoint
 # -------------------------------------------------
 class PredictRequest(BaseModel):
     symptoms: str
@@ -57,13 +59,16 @@ async def predict_json(request: PredictRequest):
         # --- Decode image from base64 ---
         image_data = base64.b64decode(request.image_base64)
         image = Image.open(io.BytesIO(image_data))
-        temp_path = "temp_image.jpg"
-        image.save(temp_path)
 
-        # --- Upload to Gemini ---
-        gemini_file = genai.upload_file(temp_path)
+        # --- Convert PIL image to bytes directly ---
+        img_byte_arr = io.BytesIO()
+        image.save(img_byte_arr, format='JPEG')
+        img_bytes = img_byte_arr.getvalue()
 
-        # --- Compose a smart prompt for Gemini ---
+        # --- Upload to Gemini directly from memory ---
+        gemini_file = genai.upload_file("skin_image.jpg", img_bytes)
+
+        # --- Compose prompt for Gemini ---
         prompt = f"""
         You are a medical image analysis assistant.
         The patient reports: {request.symptoms}.
@@ -79,14 +84,12 @@ async def predict_json(request: PredictRequest):
         model = genai.GenerativeModel("gemini-2.5-flash")
         response = model.generate_content([prompt, gemini_file])
 
-        text = response.text.strip()
-
-        # --- If Gemini returned raw JSON, try to parse it ---
+        # --- Parse Gemini response ---
         import json
         try:
-            prediction = json.loads(text)
+            prediction = json.loads(response.text.strip())
         except json.JSONDecodeError:
-            prediction = {"raw_text": text}
+            prediction = {"raw_text": response.text.strip()}
 
         return {"prediction": prediction}
 
@@ -96,7 +99,7 @@ async def predict_json(request: PredictRequest):
 
 
 # -------------------------------------------------
-# ✅ Simple chat endpoint (optional)
+# Optional chat endpoint
 # -------------------------------------------------
 @app.post("/chat")
 async def chat(prompt: str):
@@ -110,7 +113,7 @@ async def chat(prompt: str):
 
 
 # -------------------------------------------------
-# ✅ Local run (Render will ignore this)
+# Local run (ignored on Render)
 # -------------------------------------------------
 if __name__ == "__main__":
     import uvicorn

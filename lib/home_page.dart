@@ -123,14 +123,15 @@ class _HomePageState extends State<HomePage> {
         if (data["prediction"] is Map) {
           // Extract prediction data from response
           final pred = data["prediction"];
-          // Extract and format top diseases list
+          
           final topDiseases = (pred["top_3_possible_diseases"] as List?)
                   ?.map((d) => {
                         "name": d["name"].toString(),
-                        "confidence": d["confidence_percentage"].toString()
+                        "confidence": d["confidence"].toString()
                       })
                   .toList() ??
               [];
+          
           // Extract recommended next steps list
           final steps = (pred["recommended_next_steps"] as List?)
                   ?.map((s) => s.toString())

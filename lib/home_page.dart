@@ -1,3 +1,4 @@
+import 'dart:isolate';
 import 'dart:async'; // Import async for TimeoutException handling
 import 'dart:io'; // Import for File operations
 import 'dart:typed_data'; // Import for Uint8List data type

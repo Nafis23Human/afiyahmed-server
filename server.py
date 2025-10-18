@@ -47,11 +47,11 @@ def parse_gemini_response(response_text):
     Handles cases where Gemini wraps JSON in markdown code blocks.
     """
     try:
-        # Remove markdown code blocks if present (```json ... ```)
-        if "```json" in response_text:
-            response_text = response_text.split("```json")[1].split("```")[0].strip()
-        elif "```" in response_text:
-            response_text = response_text.split("```")[1].split("```")[0].strip()
+        # Remove markdown code blocks if present (\`\`\`json ... \`\`\`)
+        if "\`\`\`json" in response_text:
+            response_text = response_text.split("\`\`\`json")[1].split("\`\`\`")[0].strip()
+        elif "\`\`\`" in response_text:
+            response_text = response_text.split("\`\`\`")[1].split("\`\`\`")[0].strip()
 
         # Parse the JSON string
         parsed = json.loads(response_text)
@@ -76,16 +76,19 @@ async def predict_json(request: PredictRequest):
         # Decode the base64 image
         image_bytes = base64.b64decode(request.image_base64)
 
-        prompt = """
+        prompt = f"""
         You are a dermatologist AI. Analyze this patient's image and symptoms.
+
+        Patient Symptoms: {request.symptoms}
+
         Return ONLY a valid JSON object (no markdown, no extra text) with this exact structure:
-        {
+        {{
             "top_3_possible_diseases": [
-                {"name": "Disease Name", "confidence": 75},
-                {"name": "Disease Name", "confidence": 20},
-                {"name": "Disease Name", "confidence": 5}
+                {{"name": "Disease Name", "confidence": 75}},
+                {{"name": "Disease Name", "confidence": 20}},
+                {{"name": "Disease Name", "confidence": 5}}
             ],
-            "explanation": "Brief explanation of the diagnosis",
+            "explanation": "Brief explanation of the diagnosis considering both image and symptoms",
             "urgency": "Low/Moderate/High",
             "recommended_next_steps": [
                 "Step 1",
@@ -93,7 +96,7 @@ async def predict_json(request: PredictRequest):
                 "Step 3"
             ],
             "disclaimer": "This is an AI-based suggestion, not a medical diagnosis."
-        }
+        }}
         """
 
         # Use Gemini AI if enabled
@@ -128,7 +131,7 @@ async def predict_json(request: PredictRequest):
         return {
             "prediction": {
                 "top_3_possible_diseases": top_diseases,
-                "explanation": "Based on the uploaded image and described symptoms, these are the most likely skin conditions.",
+                "explanation": f"Based on the uploaded image and your reported symptoms ({request.symptoms}), these are the most likely skin conditions.",
                 "urgency": "Moderate",
                 "recommended_next_steps": [
                     "Keep the affected area clean and dry.",

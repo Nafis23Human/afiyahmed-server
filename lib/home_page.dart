@@ -4,7 +4,7 @@ import 'dart:io'; // Import for File operations
 import 'dart:typed_data'; // Import for Uint8List data type
 import 'dart:convert'; // Import for base64 encoding/decoding
 
-import 'package:flutter/foundation.dart' show kIsWeb; // Import to check if running on web
+import 'package:flutter/foundation.dart' show kIsWeb, compute; // Import to check if running on web
 import 'package:flutter/material.dart'; // Import Material Design widgets
 import 'package:image_picker/image_picker.dart'; // Import for image picking functionality
 import 'package:image/image.dart' as img; // Import for image resizing

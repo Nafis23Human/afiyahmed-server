@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Network security configuration for Android 9+ -->
+<!-- This allows cleartext (HTTP) traffic to specific domains needed for development -->
+<network-security-config>
+    <!-- Allow cleartext traffic to Render backend server -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Allow HTTP connections to afiyahmed-server.onrender.com -->
+        <domain includeSubdomains="true">afiyahmed-server.onrender.com</domain>
+    </domain-config>
+    <!-- Default policy for other domains (requires HTTPS) -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">example.com</domain>
+    </domain-config>
+</network-security-config>

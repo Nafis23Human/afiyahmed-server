@@ -124,10 +124,10 @@ class _HomePageState extends State<HomePage> {
           // Extract prediction data from response
           final pred = data["prediction"];
           // Extract and format top diseases list
-          final topDiseases = (pred["top_diseases"] as List?)
+          final topDiseases = (pred["top_3_possible_diseases"] as List?)
                   ?.map((d) => {
                         "name": d["name"].toString(),
-                        "confidence": d["confidence"].toString()
+                        "confidence": d["confidence_percentage"].toString()
                       })
                   .toList() ??
               [];
@@ -286,24 +286,50 @@ class _HomePageState extends State<HomePage> {
 
             // Return disease item with progress bar
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.symmetric(vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Display disease name and confidence percentage
-                  Text(
-                    "${d["name"]} (${confValue.toStringAsFixed(0)}%)",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  // Display disease name with confidence percentage in a row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Disease name (takes up most of the space)
+                      Expanded(
+                        child: Text(
+                          d["name"] ?? "Unknown Disease",
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
+                        ),
+                      ),
+                      // Confidence percentage in a colored badge
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: badgeColor.withOpacity(0.2),
+                          border: Border.all(color: badgeColor, width: 1.5),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          "${confValue.toStringAsFixed(0)}%",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: badgeColor,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   // Add spacing between title and progress bar
-                  SizedBox(height: 4),
+                  SizedBox(height: 6),
+                  // Progress bar container with background
                   Container(
-                    // Set progress bar height to 24 (increased from 14)
-                    height: 24,
+                    // Set progress bar height to 28 for better visibility
+                    height: 28,
                     // Style the background container
                     decoration: BoxDecoration(
                       // Light gray background for unfilled portion
-                      color: Colors.grey.shade300,
+                      color: Colors.grey.shade200,
                       // Round the corners
                       borderRadius: BorderRadius.circular(8),
                     ),

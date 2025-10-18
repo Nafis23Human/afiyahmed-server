@@ -44,29 +44,52 @@ class PredictRequest(BaseModel):
 def parse_gemini_response(response_text):
     """
     Parse the JSON response from Gemini AI.
-    Handles cases where Gemini wraps JSON in markdown code blocks.
+    Handles cases where Gemini wraps JSON in markdown code blocks or adds extra text.
     """
     try:
-        # Remove markdown code blocks if present (\`\`\`json ... \`\`\`)
+        # First, try to remove markdown code blocks
         if "\`\`\`json" in response_text:
             response_text = response_text.split("\`\`\`json")[1].split("\`\`\`")[0].strip()
         elif "\`\`\`" in response_text:
             response_text = response_text.split("\`\`\`")[1].split("\`\`\`")[0].strip()
 
+        # Look for the first { and last } to extract the JSON object
+        start_idx = response_text.find('{')
+        end_idx = response_text.rfind('}')
+
+        if start_idx != -1 and end_idx != -1:
+            response_text = response_text[start_idx:end_idx + 1]
+
+        response_text = response_text.strip()
+
+        print(f"[v0] Cleaned response: {response_text[:300]}...")
+
         # Parse the JSON string
         parsed = json.loads(response_text)
+
+        required_fields = ["top_3_possible_diseases", "explanation", "urgency", "recommended_next_steps", "disclaimer"]
+        for field in required_fields:
+            if field not in parsed:
+                print(f"[v0] Missing field: {field}")
+                raise ValueError(f"Missing required field: {field}")
+
+        if not isinstance(parsed["top_3_possible_diseases"], list) or len(parsed["top_3_possible_diseases"]) == 0:
+            raise ValueError("Invalid diseases structure")
+
+        for disease in parsed["top_3_possible_diseases"]:
+            if "name" not in disease or "confidence" not in disease:
+                raise ValueError("Disease missing name or confidence")
+
+        print("[v0] Successfully parsed Gemini response")
         return parsed
-    except json.JSONDecodeError:
-        # If parsing fails, return a default response
-        return {
-            "top_3_possible_diseases": [
-                {"name": "Unable to parse", "confidence": 100}
-            ],
-            "explanation": "Error parsing AI response",
-            "urgency": "Moderate",
-            "recommended_next_steps": ["Consult a dermatologist"],
-            "disclaimer": "This is an AI-based suggestion, not a medical diagnosis."
-        }
+
+    except json.JSONDecodeError as e:
+        print(f"[v0] JSON parsing error: {str(e)}")
+        print(f"[v0] Raw response: {response_text[:500]}")
+        return None
+    except ValueError as e:
+        print(f"[v0] Validation error: {str(e)}")
+        return None
 
 
 # Predict endpoint
@@ -76,42 +99,62 @@ async def predict_json(request: PredictRequest):
         # Decode the base64 image
         image_bytes = base64.b64decode(request.image_base64)
 
-        prompt = f"""
-        You are a dermatologist AI. Analyze this patient's image and symptoms.
+        prompt = f"""You are a dermatologist AI. Analyze this patient's skin image and symptoms carefully.
 
-        Patient Symptoms: {request.symptoms}
+Patient Symptoms: {request.symptoms}
 
-        Return ONLY a valid JSON object (no markdown, no extra text) with this exact structure:
-        {{
-            "top_3_possible_diseases": [
-                {{"name": "Disease Name", "confidence": 75}},
-                {{"name": "Disease Name", "confidence": 20}},
-                {{"name": "Disease Name", "confidence": 5}}
-            ],
-            "explanation": "Brief explanation of the diagnosis considering both image and symptoms",
-            "urgency": "Low/Moderate/High",
-            "recommended_next_steps": [
-                "Step 1",
-                "Step 2",
-                "Step 3"
-            ],
-            "disclaimer": "This is an AI-based suggestion, not a medical diagnosis."
-        }}
-        """
+Return ONLY a valid JSON object with this exact structure (no markdown, no extra text):
+{{
+    "top_3_possible_diseases": [
+        {{"name": "Disease Name", "confidence": 75}},
+        {{"name": "Disease Name", "confidence": 20}},
+        {{"name": "Disease Name", "confidence": 5}}
+    ],
+    "explanation": "Brief explanation considering both the image and symptoms",
+    "urgency": "Low/Moderate/High",
+    "recommended_next_steps": [
+        "Step 1",
+        "Step 2",
+        "Step 3"
+    ],
+    "disclaimer": "This is an AI-based suggestion, not a medical diagnosis."
+}}"""
 
         # Use Gemini AI if enabled
         if USE_GEMINI:
-            response = model.generate_content([
-                prompt,
-                {"mime_type": "image/jpeg", "data": image_bytes}
-            ])
+            try:
+                response = model.generate_content([
+                    prompt,
+                    {"mime_type": "image/jpeg", "data": image_bytes}
+                ])
 
-            parsed_response = parse_gemini_response(response.text)
+                print(f"[v0] Gemini raw response: {response.text[:500]}...")
+                parsed_response = parse_gemini_response(response.text)
 
-            # Return the properly structured response
-            return {
-                "prediction": parsed_response
-            }
+                if parsed_response is None:
+                    print("[v0] Parsing failed, returning error response")
+                    return {
+                        "prediction": {
+                            "top_3_possible_diseases": [
+                                {"name": "Analysis Error", "confidence": 0}
+                            ],
+                            "explanation": "Unable to analyze the image. Please try again with a clearer image.",
+                            "urgency": "Low",
+                            "recommended_next_steps": [
+                                "Ensure the image is clear and well-lit",
+                                "Try uploading a different image",
+                                "Consult a dermatologist directly"
+                            ],
+                            "disclaimer": "This is an AI-based suggestion, not a medical diagnosis."
+                        }
+                    }
+
+                return {
+                    "prediction": parsed_response
+                }
+            except Exception as gemini_error:
+                print(f"[v0] Gemini API error: {str(gemini_error)}")
+                raise HTTPException(status_code=500, detail=f"Gemini API error: {str(gemini_error)}")
 
         # Dummy structured output for testing (always returns structured JSON)
         disease_names = ["Eczema", "Psoriasis", "Dermatitis", "Rosacea", "Fungal Infection"]

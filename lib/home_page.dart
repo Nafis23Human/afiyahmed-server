@@ -66,30 +66,10 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      // Resize image to reduce file size
-      Uint8List imageData;
-      // Check if running on web platform
-      if (kIsWeb) {
-        // Decode image bytes
-        final original = img.decodeImage(_imageBytes!);
-        // Check if image decoding was successful
-        if (original == null) throw Exception("Failed to decode image");
-        // Resize image to 400px width
-        final resized = img.copyResize(original, width: 400);
-        // Encode resized image as JPEG
-        imageData = Uint8List.fromList(img.encodeJpg(resized));
-      } else {
-        // Read image file from mobile storage
-        final bytes = await _imageFile!.readAsBytes();
-        // Decode image bytes
-        final original = img.decodeImage(bytes);
-        // Check if image decoding was successful
-        if (original == null) throw Exception("Failed to decode image");
-        // Resize image to 400px width
-        final resized = img.copyResize(original, width: 400);
-        // Encode resized image as JPEG
-        imageData = Uint8List.fromList(img.encodeJpg(resized));
-      }
+      // Use compute() to run image resizing in a separate isolate
+      Uint8List imageData = await compute(_compressImage, 
+        kIsWeb ? _imageBytes! : await _imageFile!.readAsBytes()
+      );
 
       // Convert image to base64 string for transmission
       final imageBase64 = base64Encode(imageData);
@@ -176,6 +156,18 @@ class _HomePageState extends State<HomePage> {
       // Set loading state to false after request completes
       setState(() => _loading = false);
     }
+  }
+
+  // This prevents UI freezing when processing large images
+  static Future<Uint8List> _compressImage(Uint8List imageBytes) async {
+    // Decode image bytes to image object
+    final original = img.decodeImage(imageBytes);
+    // Check if image decoding was successful
+    if (original == null) throw Exception("Failed to decode image");
+    // Resize image to 400px width to reduce file size
+    final resized = img.copyResize(original, width: 400);
+    // Encode resized image as JPEG with quality 85 for better compression
+    return Uint8List.fromList(img.encodeJpg(resized, quality: 85));
   }
 
   Widget _gradientButton(String text, VoidCallback onPressed) {

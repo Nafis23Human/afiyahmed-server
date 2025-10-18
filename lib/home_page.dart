@@ -233,22 +233,245 @@ class _HomePageState extends State<HomePage> {
     required List<String> steps,
     required String disclaimer,
   }) {
-    // Return column with all result sections
+    // Return column with all result sections in organized cards
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Display top diseases with progress bars
+        // Display top diseases with progress bars and modern styling
         _buildDiseaseSection("🩺 Top Possible Diseases", topDiseases),
-        // Display explanation section
-        _buildSection("💡 Explanation", Colors.orange, [explanation]),
-        // Display urgency level
-        _buildSection("⚠️ Urgency", Colors.red, [urgency]),
-        // Display recommended next steps
-        _buildSection("✅ Recommended Next Steps", Colors.green, steps),
-        // Display medical disclaimer
-        _buildSection("📜 Disclaimer", Colors.grey, [disclaimer]),
+        // Add spacing between sections
+        SizedBox(height: 16),
+        // Display explanation in a modern card with better formatting
+        _buildModernCard(
+          title: "💡 Explanation",
+          color: Colors.orange,
+          child: Text(
+            explanation,
+            style: TextStyle(
+              fontSize: 15,
+              color: Colors.black87,
+              height: 1.6,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ),
+        // Add spacing between sections
+        SizedBox(height: 12),
+        // Display urgency level in a highlighted card
+        _buildModernCard(
+          title: "⚠️ Urgency Level",
+          color: Colors.red,
+          child: Container(
+            // Create a pill-shaped badge for urgency
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              // Background color based on urgency level
+              color: _getUrgencyColor(urgency).withOpacity(0.15),
+              // Border with urgency color
+              border: Border.all(color: _getUrgencyColor(urgency), width: 2),
+              // Round the corners
+              borderRadius: BorderRadius.circular(20),
+            ),
+            // Display urgency text
+            child: Text(
+              urgency,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: _getUrgencyColor(urgency),
+              ),
+            ),
+          ),
+        ),
+        // Add spacing between sections
+        SizedBox(height: 12),
+        // Display recommended next steps in a modern list format
+        _buildRecommendedSteps(steps),
+        // Add spacing between sections
+        SizedBox(height: 12),
+        // Display medical disclaimer in a subtle card
+        _buildModernCard(
+          title: "📜 Disclaimer",
+          color: Colors.grey,
+          child: Text(
+            disclaimer,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.black87,
+              height: 1.5,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
       ],
     );
+  }
+
+  // Helper method to build a modern card container for sections
+  Widget _buildModernCard({
+    required String title,
+    required Color color,
+    required Widget child,
+  }) {
+    // Return container with card styling
+    return Container(
+      // Add padding inside the card
+      padding: EdgeInsets.all(14),
+      // Style the card appearance
+      decoration: BoxDecoration(
+        // White background
+        color: Colors.white,
+        // Colored left border for visual accent
+        border: Border(
+          left: BorderSide(color: color, width: 4),
+        ),
+        // Round the corners
+        borderRadius: BorderRadius.circular(10),
+        // Add subtle shadow
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      // Column for vertical layout
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Display section title with icon and color
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          // Add spacing between title and content
+          SizedBox(height: 10),
+          // Display the card content
+          child,
+        ],
+      ),
+    );
+  }
+
+  // Helper method to build recommended next steps section with better formatting
+  Widget _buildRecommendedSteps(List<String> steps) {
+    // Return modern card with steps list
+    return Container(
+      // Add padding inside the card
+      padding: EdgeInsets.all(14),
+      // Style the card appearance
+      decoration: BoxDecoration(
+        // White background
+        color: Colors.white,
+        // Green left border for visual accent
+        border: Border(
+          left: BorderSide(color: Colors.green, width: 4),
+        ),
+        // Round the corners
+        borderRadius: BorderRadius.circular(10),
+        // Add subtle shadow
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      // Column for vertical layout
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Display section title
+          Text(
+            "✅ Recommended Next Steps",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.green,
+            ),
+          ),
+          // Add spacing between title and steps
+          SizedBox(height: 10),
+          // Map each step to a numbered list item
+          ...steps.asMap().entries.map((entry) {
+            // Get step index (starting from 1)
+            int index = entry.key + 1;
+            // Get step text
+            String step = entry.value;
+            // Return row with step number and text
+            return Padding(
+              // Add vertical padding between steps
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              // Row for horizontal layout
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Step number in a circle
+                  Container(
+                    // Set size for circle
+                    width: 28,
+                    height: 28,
+                    // Style the circle
+                    decoration: BoxDecoration(
+                      // Green background
+                      color: Colors.green.shade100,
+                      // Make it circular
+                      shape: BoxShape.circle,
+                      // Green border
+                      border: Border.all(color: Colors.green, width: 2),
+                    ),
+                    // Center the number inside circle
+                    child: Center(
+                      child: Text(
+                        "$index",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Add spacing between number and text
+                  SizedBox(width: 12),
+                  // Step text (takes remaining space)
+                  Expanded(
+                    child: Text(
+                      step,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.black87,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to get color based on urgency level
+  Color _getUrgencyColor(String urgency) {
+    // Convert urgency to lowercase for comparison
+    final lower = urgency.toLowerCase();
+    // Return red for high urgency
+    if (lower.contains("high")) return Colors.red;
+    // Return orange for moderate urgency
+    if (lower.contains("moderate") || lower.contains("medium")) return Colors.orange;
+    // Return green for low urgency
+    if (lower.contains("low")) return Colors.green;
+    // Default to gray if urgency level is unknown
+    return Colors.grey;
   }
 
   Widget _buildDiseaseSection(String title, List<Map<String, String>> diseases) {

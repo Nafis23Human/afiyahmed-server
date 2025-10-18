@@ -1,14 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Added INTERNET and NETWORK_STATE permissions for network connectivity -->
+    <!-- INTERNET permission allows the app to access network resources -->
     <uses-permission android:name="android.permission.INTERNET" />
+    
+    <!-- ACCESS_NETWORK_STATE permission allows the app to check network connectivity status -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     
+    <!-- Application configuration -->
     <application
         android:label="afiyahmed"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        <!-- Added networkSecurityConfig to allow HTTP traffic to Render server -->
         android:networkSecurityConfig="@xml/network_security_config">
+        
+        <!-- Main activity for the Flutter app -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -18,23 +23,30 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
+            
+            <!-- Flutter theme metadata -->
             <meta-data
-              android:name="io.flutter.embedding.android.NormalTheme"
-              android:resource="@style/NormalTheme"
-              />
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme" />
+            
+            <!-- Intent filter for app launcher -->
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <!-- Flutter embedding version metadata -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
+    
+    <!-- Queries for Android 11+ compatibility -->
     <queries>
         <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT"/>
-            <data android:mimeType="text/plain"/>
+            <action android:name="android.intent.action.PROCESS_TEXT" />
+            <data android:mimeType="text/plain" />
         </intent>
     </queries>
 </manifest>
